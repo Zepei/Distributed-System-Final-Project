@@ -4,6 +4,14 @@ from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import tkinter
 
+hands = []
+
+
+class Card:
+    def __init__(self, suit, number):
+        self.suit = suit
+        self.number = number
+
 
 def receive():
     """Handles receiving of messages."""
@@ -30,6 +38,11 @@ def on_closing(event=None):
     my_msg.set("{quit}")
     send()
 
+
+def cheat():
+    print('You want to cheat')
+
+
 top = tkinter.Tk()
 top.title("The Game You Can't Cheat")
 
@@ -38,17 +51,22 @@ my_msg = tkinter.StringVar()  # For the messages to be sent.
 my_msg.set("Type your messages here.")
 scrollbar = tkinter.Scrollbar(messages_frame)  # To navigate through past messages.
 # Following will contain the messages.
-msg_list = tkinter.Listbox(messages_frame, height=15, width=50, yscrollcommand=scrollbar.set)
+msg_list = tkinter.Listbox(messages_frame, height=10, width=50, yscrollcommand=scrollbar.set)
 scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 msg_list.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
 msg_list.pack()
 messages_frame.pack()
+
+hand_frame = tkinter.Frame(top)
+
 
 entry_field = tkinter.Entry(top, textvariable=my_msg)
 entry_field.bind("<Return>", send)
 entry_field.pack()
 send_button = tkinter.Button(top, text="Send", command=send)
 send_button.pack()
+cheat_button = tkinter.Button(top, text="Cheat!", command=cheat)
+cheat_button.pack()
 
 top.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -56,6 +74,7 @@ top.protocol("WM_DELETE_WINDOW", on_closing)
 HOST = input('Enter host(leave blank if not known): ')
 if not HOST:
     HOST = "ec2-3-91-101-44.compute-1.amazonaws.com"
+else: HOST = ''
 
 PORT = input('Enter port(leave blank if not known): ')
 if not PORT:
