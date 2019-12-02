@@ -53,11 +53,11 @@ send_button.pack()
 top.protocol("WM_DELETE_WINDOW", on_closing)
 
 #----Now comes the sockets part----
-HOST = input('Enter host: ')
+HOST = input('Enter host(leave blank if not known): ')
 if not HOST:
     HOST = "ec2-3-91-101-44.compute-1.amazonaws.com"
 
-PORT = input('Enter port: ')
+PORT = input('Enter port(leave blank if not known): ')
 if not PORT:
     PORT = 33000
 else:
