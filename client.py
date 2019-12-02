@@ -43,6 +43,10 @@ def cheat():
     print('You want to cheat')
 
 
+def play():
+    print("you played")
+
+
 top = tkinter.Tk()
 top.title("The Game You Can't Cheat")
 
@@ -63,9 +67,20 @@ hand_frame = tkinter.Frame(top)
 entry_field = tkinter.Entry(top, textvariable=my_msg)
 entry_field.bind("<Return>", send)
 entry_field.pack()
-send_button = tkinter.Button(top, text="Send", command=send)
+send_button = tkinter.Button(top, text="Send", command=send, highlightbackground='#3E4149')
 send_button.pack()
-cheat_button = tkinter.Button(top, text="Cheat!", command=cheat)
+
+suit = tkinter.StringVar()
+suit.set("enter a suit")
+number = tkinter.StringVar()
+number.set("enter a number")
+suit_field = tkinter.Entry(top, textvariable=suit)
+suit_field.pack()
+number_field = tkinter.Entry(top, textvariable=number)
+number_field.pack()
+play_button = tkinter.Button(top, text="Play!", command=play, highlightbackground='#3E4149')
+play_button.pack()
+cheat_button = tkinter.Button(top, text="Cheat!", command=cheat, highlightbackground='#3E4149')
 cheat_button.pack()
 
 top.protocol("WM_DELETE_WINDOW", on_closing)
