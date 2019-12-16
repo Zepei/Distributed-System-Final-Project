@@ -31,27 +31,31 @@ async def start_client(calocation):
     match_context.load_verify_locations(calocation)
     reader, writer = await asyncio.open_connection(match_hostname, match_port, ssl=match_context, family=socket.AF_INET)
 
-    # a server listening to connections from peers
+    # start a server listening to incoming connections from peers
     peer_server = await asyncio.start_server(peer_server_handle_connection, '', 35000, familiy=socket.AF_INET)
     async with peer_server:
         await peer_server.serve_forever()
 
-    # handle communication to server
+    # handle communication to the match server
     while True:
         data = await reader.read(100)
         if not data:
             break
         message = data.decode()
+        # if check alive, response current time
         if message.find('alive?'):
             writer.write(('alive!time='+str(time.time())).encode())
             await writer.drain()
+        # if peerinfo is received, start connecting peers
         if message.find('peerinfo!'):
             connect_peers(message)
     writer.close()
 
 
+# the callback that handles incoming peer connections
 async def peer_server_handle_connection(reader, writer):
     global peer_writers_incoming
+    # record all the writers
     peer_writers_incoming.append(writer)
     while True:
         data = await reader.read(100)
@@ -60,10 +64,14 @@ async def peer_server_handle_connection(reader, writer):
         message = data.decode()
 
 
+# according to peerinfo, connect peers
 def connect_peers(peerinfo):
     global peer_addrs
     global my_position
+    # get addresses from all four peers
+    # peerinfo has such format: 1peerinfo!123.123.123.12:12345,123.123.123.12:12345,123.123.123.12:12345,123.123.123.12:12345
     peer_addrs = peerinfo[peerinfo.find('!')+1:].split(',')
+    # the first digit decide when player this client is
     if peerinfo[0] == '0':
         my_position = 0
         asyncio.run(a_player_connect())
@@ -77,44 +85,47 @@ def connect_peers(peerinfo):
         my_position = 3
 
 
+# a player connects to b, c, d
 async def a_player_connect():
     global peer_addrs
     global peer_writers_outgoing
     b_hostname = peer_addrs[1].split(':')[0]
     b_port = peer_addrs[1].split(':')[1]
     b_reader, b_writer = await asyncio.open_connection(b_hostname, 35000, family=socket.AF_INET)
-    peer_writers_outgoing.append((b_reader, b_writer))
+    peer_writers_outgoing.append(b_writer)
 
     c_hostname = peer_addrs[2].split(':')[0]
     c_port = peer_addrs[2].split(':')[1]
     c_reader, c_writer = await asyncio.open_connection(c_hostname, 35000, family=socket.AF_INET)
-    peer_writers_outgoing.append((c_reader, c_writer))
+    peer_writers_outgoing.append(c_writer)
 
     d_hostname = peer_addrs[3].split(':')[0]
     d_port = peer_addrs[3].split(':')[1]
     d_reader, d_writer = await asyncio.open_connection(d_hostname, 35000, family=socket.AF_INET)
-    peer_writers_outgoing.append((d_reader, d_writer))
+    peer_writers_outgoing.append(d_writer)
 
 
+# b player connects to c, d
 async def b_player_connect():
     global peer_addrs
     c_hostname = peer_addrs[2].split(':')[0]
     c_port = peer_addrs[2].split(':')[1]
     c_reader, c_writer = await asyncio.open_connection(c_hostname, 35000, family=socket.AF_INET)
-    peer_writers_outgoing.append((c_reader, c_writer))
+    peer_writers_outgoing.append(c_writer)
 
     d_hostname = peer_addrs[3].split(':')[0]
     d_port = peer_addrs[3].split(':')[1]
     d_reader, d_writer = await asyncio.open_connection(d_hostname, 35000, family=socket.AF_INET)
-    peer_writers_outgoing.append((d_reader, d_writer))
+    peer_writers_outgoing.append(d_writer)
 
 
+# c player connects to d
 async def c_player_connect():
     global peer_addrs
     d_hostname = peer_addrs[3].split(':')[0]
     d_port = peer_addrs[3].split(':')[1]
     d_reader, d_writer = await asyncio.open_connection(d_hostname, 35000, family=socket.AF_INET)
-    peer_writers_outgoing.append((d_reader, d_writer))
+    peer_writers_outgoing.append(d_writer)
 
 
 # server side code
@@ -132,6 +143,7 @@ async def start_server(certfile, keyfile):
     async with match_server:
         await match_server.serve_forever()
 
+    # check alive every 30 seconds
     loop = asyncio.get_event_loop()
     loop.call_later(30, check_alive, loop)
 
@@ -143,17 +155,18 @@ async def match_handle_connection(reader, writer):
     global match_clients_writers
     global broadcasted
     global last_alive_time_stamp
-
+    # if 5th connections comes, reject
     if len(match_clients_addrs > 4) or len(match_clients_sockets > 4):
         writer.close()
         return
 
+    # update globals
     addr = writer.get_extra_info('peername')
     match_clients_addrs.append(addr)
     match_clients_sockets = match_server.sockets
     match_clients_writers.append(writer)
     last_alive_time_stamp[str(addr)] = 0
-
+    # if have 4 connections, broadcast peerinfo
     if len(match_clients_addrs) == 4 and len(match_clients_sockets) == 4:
         if not broadcasted:
             writer_index = match_clients_writers.index(writer)
@@ -178,7 +191,6 @@ async def match_handle_connection(reader, writer):
     match_clients_writers.remove(writer)
     writer.close()
     match_clients_sockets = match_server.sockets
-
     if len(match_clients_addrs != 4) and len(match_clients_sockets != 4):
         broadcasted = False
 
