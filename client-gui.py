@@ -3,7 +3,8 @@ from PyQt5.QtGui import QTextCursor
 from PyQt5.QtCore import Qt
 import sys
 
-exmaple_hand = 'S1 H2 D3 C4 S5 H6 D7 C8 S9 H10 D11 C12 S13'
+example_hand = 'S1 H2 D3 C4 S5 H6 D7 C8 S9 H10 D11 C12 S13'
+
 
 class Example(QWidget):
 
@@ -71,7 +72,7 @@ class Example(QWidget):
         self.clear_all_fields()
         self.push_message_to_table("Finding a Match")
         self.push_message_to_table("A match is found!!!")
-        self.my_hand_info.setText(exmaple_hand)
+        self.my_hand_info.setText(example_hand)
 
     def play_card_handler(self):
         suit = self.suit_edit.text()
@@ -117,7 +118,6 @@ class Example(QWidget):
 
     def update_right_info(self, num_of_cards_left, last_played_card):
         self.player_right_info.setText(f'{num_of_cards_left} cards left\n Last played card: {last_played_card}')
-
 
 
 if __name__ == '__main__':
